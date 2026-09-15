@@ -1,0 +1,61 @@
+text,emotion
+I am extremely happy today,joy
+I feel wonderful and cheerful,joy
+I am excited about the good news,joy
+Today has been a fantastic day,joy
+I am delighted with the result,joy
+I cannot stop smiling because I am so happy,joy
+I feel joyful and positive,joy
+This is the best news I have received,joy
+I am enjoying this beautiful moment,joy
+I feel sad today,sadness
+I am feeling lonely and unhappy,sadness
+The bad news made me feel sad,sadness
+I miss my friends and feel lonely,sadness
+I feel disappointed about the result,sadness
+Nothing seems to be going well today,sadness
+I am unhappy about what happened,sadness
+I feel heartbroken about the situation,sadness
+I am disappointed and sad,sadness
+I am extremely angry about this,anger
+This situation makes me furious,anger
+I am annoyed by this behavior,anger
+I am angry about the unfair decision,anger
+I cannot believe how frustrating this is,anger
+I feel irritated and angry,anger
+This makes me really mad,anger
+I am furious about what happened,anger
+I am upset because they ignored me,anger
+I am scared of what might happen,fear
+I feel nervous and afraid,fear
+This situation is frightening,fear
+I am worried about the upcoming result,fear
+I feel anxious about the situation,fear
+I am afraid of failing the test,fear
+I am nervous about speaking in public,fear
+I feel frightened by the strange sound,fear
+I am worried and scared,fear
+"Wow, I did not expect that",surprise
+I am completely surprised by the result,surprise
+What an unexpected announcement,surprise
+I cannot believe this happened,surprise
+That was a shocking surprise,surprise
+I was amazed by the unexpected news,surprise
+I never thought this would happen,surprise
+What a surprising result,surprise
+I am amazed by what I just saw,surprise
+I really dislike this,disgust
+That food tastes terrible,disgust
+I feel disgusted by the situation,disgust
+The horrible smell makes me uncomfortable,disgust
+This dirty place makes me feel disgusted,disgust
+I hate the unpleasant smell,disgust
+That was a disgusting experience,disgust
+The rotten food looks disgusting,disgust
+I feel sickened by the terrible smell,disgust
+I am happy but nervous about the result,"joy,fear"
+I feel excited but also worried,"joy,fear"
+I am surprised and happy about the news,"surprise,joy"
+I am sad and angry about what happened,"sadness,anger"
+I am scared and surprised by the sudden event,"fear,surprise"
+I am angry and disgusted by this behavior,"anger,disgust"

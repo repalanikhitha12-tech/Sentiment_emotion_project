@@ -1,0 +1,19 @@
+text,emotion
+"I am very happy today",joy
+"I feel wonderful and cheerful",joy
+"I am excited about the good news",joy
+"I feel very sad today",sadness
+"I am feeling lonely and unhappy",sadness
+"The bad news made me cry",sadness
+"I am extremely angry about this",anger
+"This situation makes me furious",anger
+"I am annoyed and angry",anger
+"I am scared of what might happen",fear
+"I feel nervous and afraid",fear
+"This situation is frightening",fear
+"Wow, I did not expect that",surprise
+"I am completely surprised by the result",surprise
+"What an unexpected announcement",surprise
+"I really dislike this",disgust
+"That food tastes terrible",disgust
+"I feel disgusted by the situation",disgust

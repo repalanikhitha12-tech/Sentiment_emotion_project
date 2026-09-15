@@ -1,0 +1,235 @@
+# MILESTONE 2 - ISEAR BENCHMARK VALIDATION REPORT
+
+1. DATASET INFORMATION
+
+---
+
+Dataset Type:
+ISEAR-derived shortened benchmark dataset
+
+Dataset File:
+milestone2\data\isear\isear.csv
+
+Total Examples:
+7102
+
+Available Emotion Categories:
+
+* Anger
+* Fear
+* Joy
+* Sadness
+
+Note:
+This dataset is a shortened ISEAR-derived dataset containing
+four emotion categories. The original ISEAR dataset contains
+more emotion categories. Therefore, this benchmark evaluates
+the trained model only on the four emotions available in this
+dataset.
+
+2. DATA VALIDATION
+
+---
+
+Total rows loaded       : 7102
+Valid benchmark examples: 7102
+
+Emotion Distribution:
+
+Anger   : 1701
+Fear    : 2252
+Joy     : 1616
+Sadness : 1533
+
+All 7102 records contained valid emotion labels and text
+content and were included in the benchmark evaluation.
+
+3. MODEL INFORMATION
+
+---
+
+Model Evaluated:
+BERT
+
+Model Location:
+milestone2\models\bert
+
+The BERT model was trained using the project's six emotion
+categories:
+
+* Joy
+* Sadness
+* Anger
+* Fear
+* Surprise
+* Disgust
+
+For this benchmark, only the four emotions available in the
+ISEAR-derived dataset were considered:
+
+* Anger
+* Fear
+* Joy
+* Sadness
+
+4. BENCHMARK RESULTS
+
+---
+
+Accuracy            : 0.2891
+Macro Precision     : 0.3165
+Macro Recall        : 0.2954
+Macro F1            : 0.2371
+Average Confidence  : 0.4305
+
+Incorrect Predictions: 5049
+Correct Predictions  : 2053
+
+Total Evaluated     : 7102
+
+5. EMOTION-WISE PERFORMANCE
+
+---
+
+## ANGER
+
+Precision : 0.37
+Recall    : 0.01
+F1-Score  : 0.01
+Support   : 1701
+
+## FEAR
+
+Precision : 0.37
+Recall    : 0.26
+F1-Score  : 0.30
+Support   : 2252
+
+## JOY
+
+Precision : 0.27
+Recall    : 0.68
+F1-Score  : 0.39
+Support   : 1616
+
+## SADNESS
+
+Precision : 0.26
+Recall    : 0.24
+F1-Score  : 0.25
+Support   : 1533
+
+6. OVERALL CLASSIFICATION PERFORMANCE
+
+---
+
+Accuracy : 0.29
+
+Macro Precision : 0.32
+
+Macro Recall : 0.30
+
+Macro F1 : 0.24
+
+The model performed best for Joy based on F1-score, with an
+F1-score of 0.39.
+
+Fear achieved an F1-score of 0.30.
+
+Sadness achieved an F1-score of 0.25.
+
+Anger achieved the lowest F1-score of 0.01 because the model
+correctly identified very few anger examples.
+
+7. CONFIDENCE SCORE VALIDATION
+
+---
+
+Average Confidence:
+0.4305
+
+The confidence score was generated dynamically from the BERT
+model's output probabilities.
+
+The confidence values were not hardcoded.
+
+8. INCORRECT PREDICTION VALIDATION
+
+---
+
+Total Examples:
+7102
+
+Incorrect Predictions:
+5049
+
+Correct Predictions:
+2053
+
+The benchmark identified 5049 incorrect predictions out of
+7102 evaluated examples.
+
+9. VALIDATION STATUS
+
+---
+
+Dataset Loading              : PASS
+Dataset Column Validation    : PASS
+Emotion Label Validation     : PASS
+Text Validation              : PASS
+BERT Model Loading           : PASS
+Prediction Generation        : PASS
+Accuracy Calculation         : PASS
+Precision Calculation        : PASS
+Recall Calculation           : PASS
+Macro F1 Calculation         : PASS
+Confidence Calculation       : PASS
+Emotion-wise Evaluation      : PASS
+Incorrect Prediction Count   : PASS
+
+10. LIMITATIONS
+
+---
+
+The BERT model used in this project was fine-tuned using a
+small synthetic dataset containing only 60 training examples.
+
+Therefore, the benchmark results should not be interpreted as
+representative of real-world BERT performance.
+
+The benchmark dataset is also a shortened ISEAR-derived dataset
+with four emotions rather than the six emotions used by the
+project's final emotion classification system.
+
+The missing Surprise and Disgust categories were not treated as
+errors. The benchmark was evaluated only using the four emotion
+categories available in the dataset.
+
+11. CONCLUSION
+
+---
+
+The ISEAR-derived benchmark validation was successfully
+completed using 7102 examples.
+
+The trained BERT model successfully loaded the benchmark data,
+generated predictions, calculated confidence scores, and
+produced accuracy, precision, recall, Macro F1, and
+emotion-wise performance metrics.
+
+Overall benchmark performance:
+
+Accuracy       : 28.91%
+Macro Precision: 31.65%
+Macro Recall   : 29.54%
+Macro F1       : 23.71%
+
+The benchmark validation confirms that the complete evaluation
+pipeline is working correctly.
+
+For improved real-world performance, the model should be
+fine-tuned using a much larger and more representative
+emotion-labelled training dataset.
+==================================
+
+# ISEAR BENCHMARK VALIDATION COMPLETED

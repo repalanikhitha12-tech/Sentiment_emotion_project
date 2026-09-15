@@ -1,0 +1,42 @@
+MILESTONE 2 - MODEL EVALUATION REPORT
+=====================================
+
+Dataset
+-------
+Total dataset size: 60
+Training samples: 48
+Testing samples: 12
+
+The evaluation was performed on the held-out test dataset.
+
+BERT RESULTS
+------------
+Accuracy : 0.4167
+Precision: 0.3542
+Recall   : 0.4583
+Macro F1 : 0.3826
+
+DISTILBERT RESULTS
+------------------
+Accuracy : 0.1667
+Precision: 0.3500
+Recall   : 0.2778
+Macro F1 : 0.1970
+
+MODEL COMPARISON
+----------------
+Better overall model: BERT
+
+BERT achieved a higher:
+- Accuracy
+- Recall
+- Macro F1
+
+Note
+----
+These results are based on a small synthetic dataset containing
+60 samples. Therefore, the metrics should not be considered
+representative of real-world model performance.
+
+Further validation with a larger real-world dataset such as
+ISEAR is required.
