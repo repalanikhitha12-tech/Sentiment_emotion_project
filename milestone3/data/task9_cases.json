@@ -1,0 +1,33 @@
+[
+  {
+    "name": "high_fear_relaxation",
+    "emotion": "fear",
+    "intensity": "high",
+    "preferences": ["relaxation"],
+    "relevant_ids": [
+      "calm_breathing",
+      "calm_music",
+      "take_a_break"
+    ]
+  },
+  {
+    "name": "low_sadness_music",
+    "emotion": "sadness",
+    "intensity": "low",
+    "preferences": ["music"],
+    "relevant_ids": [
+      "calm_music",
+      "journal"
+    ]
+  },
+  {
+    "name": "joy_learning",
+    "emotion": "joy",
+    "intensity": "medium",
+    "preferences": ["learning"],
+    "relevant_ids": [
+      "joy_activity",
+      "learn_something"
+    ]
+  }
+]

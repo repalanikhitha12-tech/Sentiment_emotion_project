@@ -1,11 +1,15 @@
-
 from milestone3.hybrid.engine import (
     generate_hybrid_recommendations,
 )
 from milestone3.ranking.ranker import (
     rank_recommendations,
 )
-
+from milestone3.recommendation.recommendation_data import (
+    RECOMMENDATIONS,
+)
+from milestone3.feedback.feedback_learner import (
+    calculate_feedback_score,
+)
 
 def get_ranked_recommendations(
     emotional_state,
@@ -20,9 +24,19 @@ def get_ranked_recommendations(
         emotional_state=emotional_state,
         preferences=preferences,
         history=history,
-        top_n=top_n,
+        top_n=len(RECOMMENDATIONS),
     )
+    # Task 7: Apply previous user feedback
+    for item in recommendations:
+        feedback_score = calculate_feedback_score(
+            history,
+            item["id"],
+        )
 
+        item["hybrid_score"] = (
+            item.get("hybrid_score", 0)
+            + feedback_score
+        )
     intensity_level = emotional_state.get(
         "intensity_level", "medium"
     ).lower()

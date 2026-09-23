@@ -26,8 +26,11 @@ def rank_recommendations(
         ranked.append(result)
 
     ranked.sort(
-        key=lambda item: item["ranking_score"],
-        reverse=True
-    )
+    key=lambda item: (
+        item["ranking_score"],
+        item.get("hybrid_score", 0),
+    ),
+    reverse=True
+)
 
     return ranked
