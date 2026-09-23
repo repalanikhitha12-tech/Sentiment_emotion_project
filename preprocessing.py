@@ -1,43 +1,34 @@
+
 import re
 import nltk
 
-from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
-from nltk.tokenize import word_tokenize
+from nltk.tokenize import wordpunct_tokenize
 
 
-# Download required NLTK data
-nltk.download("punkt")
-nltk.download("punkt_tab")
-nltk.download("stopwords")
-nltk.download("wordnet")
+# Built-in English stopwords
+stop_words = {
+    "a", "an", "the", "and", "or", "but", "if", "while",
+    "is", "am", "are", "was", "were", "be", "been", "being",
+    "to", "of", "in", "on", "at", "for", "with", "by",
+    "from", "as", "it", "this", "that", "these", "those",
+    "i", "you", "he", "she", "we", "they", "me", "my",
+    "your", "our", "their", "them", "his", "her", "its",
+    "do", "does", "did", "have", "has", "had",
+    "not", "no", "so", "too", "very"
+}
 
-
-# Initialize tools
-stop_words = set(stopwords.words("english"))
 lemmatizer = WordNetLemmatizer()
 
 
 def preprocess_text(text):
     """
-    Perform basic text preprocessing.
-
-    Steps:
-    1. Handle empty input
-    2. Convert text to lowercase
-    3. Remove URLs
-    4. Remove special characters
-    5. Remove punctuation
-    6. Tokenize text
-    7. Remove stop words
-    8. Lemmatize words
-    9. Remove extra spaces
+    Basic text preprocessing.
     """
 
     if text is None:
         return None
 
-    # Handle empty text
     text = text.strip()
 
     if text == "":
@@ -56,7 +47,7 @@ def preprocess_text(text):
     text = re.sub(r"\s+", " ", text).strip()
 
     # Tokenization
-    tokens = word_tokenize(text)
+    tokens = wordpunct_tokenize(text)
 
     # Stop-word removal
     tokens = [
@@ -70,7 +61,4 @@ def preprocess_text(text):
         for word in tokens
     ]
 
-    # Final processed text
-    processed_text = " ".join(tokens)
-
-    return processed_text
+    return " ".join(tokens)

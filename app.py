@@ -16,8 +16,7 @@ from transformers import (
 
 from milestone2.config import BERT_MODEL_DIR
 from milestone2.emotion.predict_emotion import predict_emotions
-
-
+from milestone3.integration import generate_final_recommendations
 app = Flask(__name__)
 
 # Number of successfully analyzed samples
@@ -55,6 +54,7 @@ def home():
     source = None
     sentiment_result = None
     emotion_result = None
+    recommendation_result = None
     input_text = None
 
     if request.method == "POST":
@@ -111,13 +111,22 @@ def home():
                     emotion_tokenizer,
                     text_input
                 )
+                # ------------------------------
+                # MILESTONE 3 RECOMMENDATIONS
+                # ------------------------------
 
+                recommendation_result = generate_final_recommendations(
+                    emotion_probabilities=emotion_result["probabilities"],
+                    preferences=["relaxation"],
+                    history={},
+                    top_n=3
+                )
                 if sentiment_result and emotion_result:
                     analyzed_samples += 1
 
-            else:
+                else:
 
-                error = message
+                    error = message
 
         # ==================================================
         # OPTION 2: FILE UPLOAD
@@ -170,8 +179,17 @@ def home():
                         emotion_tokenizer,
                         text
                     )
+                # ------------------------------
+                # MILESTONE 3 RECOMMENDATIONS
+                # ------------------------------
 
-                    if sentiment_result and emotion_result:
+                recommendation_result = generate_final_recommendations(
+                    emotion_probabilities=emotion_result["probabilities"],
+                    preferences=["relaxation"],
+                    history={},
+                    top_n=3
+                )
+                if sentiment_result and emotion_result:
                         analyzed_samples += 1
 
                 else:
@@ -221,14 +239,22 @@ def home():
                         emotion_tokenizer,
                         text
                     )
+                                # ------------------------------
+                    # MILESTONE 3 RECOMMENDATIONS
+                    # ------------------------------
+
+                    recommendation_result = generate_final_recommendations(
+                        emotion_probabilities=emotion_result["probabilities"],
+                        preferences=["relaxation"],
+                        history={},
+                        top_n=3
+                    )
 
                     if sentiment_result and emotion_result:
                         analyzed_samples += 1
 
                 else:
-
-                    error = message
-
+                    error = message      
             # --------------------------------------------------
             # INVALID FILE
             # --------------------------------------------------
@@ -259,6 +285,7 @@ def home():
         input_text=input_text,
         sentiment_result=sentiment_result,
         emotion_result=emotion_result,
+                recommendation_result=recommendation_result,
         analyzed_samples=analyzed_samples
     )
 
