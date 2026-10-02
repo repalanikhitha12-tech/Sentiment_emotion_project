@@ -4,3 +4,8 @@ __pycache__/
 *.pyc
 .env
 *.safetensors
+# Milestone 5 test environment
+.venv_m5_test/
+
+# Local emotion history data
+milestone4/data/emotion_history.json
