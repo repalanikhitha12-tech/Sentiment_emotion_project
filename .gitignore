@@ -9,3 +9,5 @@ __pycache__/
 
 # Local emotion history data
 milestone4/data/emotion_history.json
+milestone4/data/feedback_history.json
+milestone4/data/recommendation_history.json
