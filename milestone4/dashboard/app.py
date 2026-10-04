@@ -1,30 +1,43 @@
-﻿
-import streamlit as st
+﻿import streamlit as st
 import pandas as pd
+from datetime import datetime
 
 from milestone4.data.history import (
     load_emotion_history,
     save_emotion_record,
 )
+
 from milestone4.data.trend import (
     calculate_daily_average,
     calculate_weekly_average,
     calculate_monthly_average,
+    get_dominant_emotion,
 )
+
 from milestone4.data.feedback_history import (
     load_feedback_history,
     save_feedback,
 )
+
 from milestone4.data.recommendation_history import (
     load_recommendation_history,
     save_recommendation_history,
     update_recommendation_feedback,
 )
-from milestone4.data.search_filter import filter_recommendation_history
+
+from milestone4.data.search_filter import (
+    filter_recommendation_history,
+)
+
 from milestone4.reports.export_reports import (
     generate_csv_report,
     generate_pdf_report,
 )
+
+
+# ==================================================
+# PAGE CONFIGURATION
+# ==================================================
 
 st.set_page_config(
     page_title="MoodMentor",
@@ -32,739 +45,1292 @@ st.set_page_config(
     layout="wide",
 )
 
-EMOTIONS = ["joy", "sadness", "anger", "fear", "surprise", "disgust"]
 
-# --------------------------------------------------
+# ==================================================
+# TITLE
+# ==================================================
+
+st.title("🧠 MoodMentor")
+
+st.subheader(
+    "Emotion Analysis & Personalized Wellness Dashboard"
+)
+
+st.write(
+    "Enter your thoughts or feelings below. "
+    "MoodMentor analyzes your text using keywords "
+    "and displays wellness suggestions."
+)
+
+st.info(
+    "Note: This dashboard uses a simple keyword-based "
+    "analysis, not the BERT/DistilBERT model."
+)
+
+
+# ==================================================
+# EMOTION DEFINITIONS
+# ==================================================
+
+EMOTIONS = [
+    "joy",
+    "sadness",
+    "anger",
+    "fear",
+    "surprise",
+    "disgust",
+]
+
+
+# ==================================================
 # RECOMMENDATION DATA
-# --------------------------------------------------
+# ==================================================
 
 RECOMMENDATIONS = {
     "joy": [
         {
             "id": "joy_activity",
             "title": "Explore a fun activity",
-            "description": "Try a hobby or activity that you enjoy.",
-            "ranking_score": 6.5,
+            "description": (
+                "Try a hobby or activity that you enjoy."
+            ),
+            "category": "fun",
         },
         {
             "id": "learn_something",
             "title": "Learn something new",
-            "description": "Explore a topic that interests you.",
-            "ranking_score": 6.5,
+            "description": (
+                "Explore a topic that interests you."
+            ),
+            "category": "learning",
         },
         {
             "id": "calm_breathing",
             "title": "Try a short breathing exercise",
-            "description": "Take a comfortable pause and breathe slowly.",
-            "ranking_score": 5.0,
-        },
-    ],
-    "sadness": [
-        {
-            "id": "journal",
-            "title": "Write a short journal entry",
-            "description": "Write a few words about what is on your mind.",
-            "ranking_score": 6.5,
-        },
-        {
-            "id": "calm_music",
-            "title": "Listen to calming music",
-            "description": "Choose music you enjoy and take a quiet break.",
-            "ranking_score": 6.0,
-        },
-        {
-            "id": "talk_someone",
-            "title": "Connect with someone you trust",
-            "description": "Consider talking with a trusted person.",
-            "ranking_score": 5.5,
-        },
-    ],
-    "anger": [
-        {
-            "id": "calm_breathing",
-            "title": "Try a short breathing exercise",
-            "description": "Pause and breathe slowly at a comfortable pace.",
-            "ranking_score": 6.5,
-        },
-        {
-            "id": "journal",
-            "title": "Write a short journal entry",
-            "description": "Write down what happened and how you feel.",
-            "ranking_score": 6.0,
-        },
-        {
-            "id": "short_break",
-            "title": "Take a quiet break",
-            "description": "Step away briefly if possible.",
-            "ranking_score": 5.5,
+            "description": (
+                "Take a comfortable pause and breathe slowly."
+            ),
+            "category": "relaxation",
         },
     ],
     "fear": [
         {
             "id": "calm_breathing",
             "title": "Try a short breathing exercise",
-            "description": "Take a comfortable pause and breathe slowly.",
-            "ranking_score": 6.9,
+            "description": (
+                "Take a comfortable pause and breathe slowly."
+            ),
+            "category": "relaxation",
         },
         {
             "id": "calm_music",
             "title": "Listen to calming music",
-            "description": "Choose music you enjoy and take a quiet break.",
-            "ranking_score": 5.7,
+            "description": (
+                "Choose music you enjoy and take a quiet break."
+            ),
+            "category": "music",
         },
         {
             "id": "journal",
             "title": "Write a short journal entry",
-            "description": "Write a few words about what is on your mind.",
-            "ranking_score": 5.7,
+            "description": (
+                "Write a few words about what is on your mind."
+            ),
+            "category": "journaling",
+        },
+    ],
+    "sadness": [
+        {
+            "id": "calm_music",
+            "title": "Listen to calming music",
+            "description": (
+                "Choose music you enjoy and take a quiet break."
+            ),
+            "category": "music",
+        },
+        {
+            "id": "journal",
+            "title": "Write a short journal entry",
+            "description": (
+                "Write a few words about what is on your mind."
+            ),
+            "category": "journaling",
+        },
+        {
+            "id": "calm_breathing",
+            "title": "Try a short breathing exercise",
+            "description": (
+                "Take a comfortable pause and breathe slowly."
+            ),
+            "category": "relaxation",
+        },
+    ],
+    "anger": [
+        {
+            "id": "calm_breathing",
+            "title": "Try a short breathing exercise",
+            "description": (
+                "Take a comfortable pause and breathe slowly."
+            ),
+            "category": "relaxation",
+        },
+        {
+            "id": "calm_music",
+            "title": "Listen to calming music",
+            "description": (
+                "Choose music you enjoy and take a quiet break."
+            ),
+            "category": "music",
+        },
+        {
+            "id": "journal",
+            "title": "Write a short journal entry",
+            "description": (
+                "Write a few words about what is on your mind."
+            ),
+            "category": "journaling",
         },
     ],
     "surprise": [
         {
-            "id": "journal",
-            "title": "Reflect on what happened",
-            "description": "Write down what surprised you and how you feel.",
-            "ranking_score": 6.0,
+            "id": "joy_activity",
+            "title": "Explore a fun activity",
+            "description": (
+                "Try a hobby or activity that you enjoy."
+            ),
+            "category": "fun",
         },
         {
             "id": "learn_something",
             "title": "Learn something new",
-            "description": "Explore a topic that interests you.",
-            "ranking_score": 5.5,
+            "description": (
+                "Explore a topic that interests you."
+            ),
+            "category": "learning",
         },
         {
             "id": "calm_breathing",
-            "title": "Take a mindful pause",
-            "description": "Pause and notice how you feel.",
-            "ranking_score": 5.0,
+            "title": "Try a short breathing exercise",
+            "description": (
+                "Take a comfortable pause and breathe slowly."
+            ),
+            "category": "relaxation",
         },
     ],
     "disgust": [
         {
-            "id": "short_break",
-            "title": "Take a quiet break",
-            "description": "Give yourself some space from the situation.",
-            "ranking_score": 6.0,
-        },
-        {
             "id": "journal",
             "title": "Write a short journal entry",
-            "description": "Write down what is bothering you, if helpful.",
-            "ranking_score": 5.5,
+            "description": (
+                "Write a few words about what is on your mind."
+            ),
+            "category": "journaling",
         },
         {
-            "id": "talk_someone",
-            "title": "Talk with someone you trust",
-            "description": "Consider sharing your thoughts with a trusted person.",
-            "ranking_score": 5.0,
+            "id": "calm_breathing",
+            "title": "Try a short breathing exercise",
+            "description": (
+                "Take a comfortable pause and breathe slowly."
+            ),
+            "category": "relaxation",
+        },
+        {
+            "id": "calm_music",
+            "title": "Listen to calming music",
+            "description": (
+                "Choose music you enjoy and take a quiet break."
+            ),
+            "category": "music",
         },
     ],
 }
 
-# --------------------------------------------------
-# KEYWORD-BASED EMOTION ANALYSIS
-# --------------------------------------------------
+
+# ==================================================
+# EMOTION KEYWORDS
+# ==================================================
 
 KEYWORDS = {
     "joy": [
-        "happy", "happiness", "joy", "excited", "exciting",
-        "glad", "great", "good", "wonderful", "love",
-        "cheerful", "delighted",
+        "happy",
+        "joy",
+        "excited",
+        "good",
+        "great",
+        "love",
+        "wonderful",
+        "cheerful",
     ],
     "sadness": [
-        "sad", "unhappy", "lonely", "disappointed",
-        "upset", "heartbroken", "miserable", "down",
+        "sad",
+        "unhappy",
+        "cry",
+        "lonely",
+        "upset",
+        "depressed",
+        "hurt",
     ],
     "anger": [
-        "angry", "anger", "furious", "annoyed",
-        "irritated", "frustrated", "mad",
+        "angry",
+        "anger",
+        "mad",
+        "furious",
+        "annoyed",
+        "irritated",
+        "rage",
     ],
     "fear": [
-        "afraid", "fear", "scared", "worried",
-        "anxious", "nervous", "panic", "stress", "stressed",
+        "afraid",
+        "fear",
+        "scared",
+        "worried",
+        "anxious",
+        "nervous",
+        "panic",
     ],
     "surprise": [
-        "surprised", "surprise", "amazed", "astonished",
-        "unexpected", "shocked",
+        "surprised",
+        "surprise",
+        "shocked",
+        "unexpected",
+        "amazed",
     ],
     "disgust": [
-        "disgusted", "disgust", "revolting", "gross",
+        "disgust",
+        "disgusted",
+        "gross",
+        "hate",
+        "awful",
     ],
 }
 
 
+# ==================================================
+# EMOTION ANALYSIS
+# ==================================================
+
 def analyze_emotion(text):
-    """Perform simple keyword-based emotion analysis."""
+
     text_lower = text.lower()
-    scores = {}
 
-    for emotion, keywords in KEYWORDS.items():
-        matches = sum(
-            1 for keyword in keywords
-            if keyword in text_lower
+    emotion_scores = {}
+
+    for emotion in EMOTIONS:
+
+        count = 0
+
+        for keyword in KEYWORDS[emotion]:
+
+            if keyword in text_lower:
+                count += 1
+
+        emotion_scores[emotion] = round(
+            min(count * 0.2, 1.0),
+            2,
         )
-        scores[emotion] = min(matches * 0.2, 1.0)
 
-    dominant = max(scores, key=scores.get)
-    confidence = scores[dominant]
+    dominant_emotion = max(
+        emotion_scores,
+        key=emotion_scores.get,
+    )
 
-    if confidence == 0:
-        dominant = "joy"
+    max_score = emotion_scores[dominant_emotion]
 
-    detected = [
-        emotion for emotion, score in scores.items()
+    detected_emotions = [
+        emotion
+        for emotion, score
+        in emotion_scores.items()
         if score > 0
     ]
 
-    intensity = round(min(confidence * 75, 100), 1)
+    confidence = max_score
 
-    if intensity < 25:
-        intensity_level = "low"
-    elif intensity < 60:
-        intensity_level = "medium"
-    else:
-        intensity_level = "high"
-
-    positive = scores["joy"] + scores["surprise"]
-    negative = (
-        scores["sadness"]
-        + scores["anger"]
-        + scores["fear"]
-        + scores["disgust"]
+    intensity = round(
+        confidence * 75,
+        1,
     )
 
-    if positive > 0 and negative > 0:
+    if intensity >= 60:
+        intensity_level = "high"
+    elif intensity >= 30:
+        intensity_level = "medium"
+    else:
+        intensity_level = "low"
+
+    positive_score = (
+        emotion_scores["joy"]
+        + emotion_scores["surprise"]
+    )
+
+    negative_score = (
+        emotion_scores["sadness"]
+        + emotion_scores["anger"]
+        + emotion_scores["fear"]
+        + emotion_scores["disgust"]
+    )
+
+    if (
+        positive_score > 0
+        and negative_score > 0
+    ):
         polarity = "mixed"
-    elif positive > negative:
+    elif positive_score > negative_score:
         polarity = "positive"
-    elif negative > positive:
+    elif negative_score > positive_score:
         polarity = "negative"
     else:
         polarity = "neutral"
 
-    state = {
-        "dominant_emotion": dominant,
-        "multiple_emotions": detected,
+    mixed_state = len(detected_emotions) > 1
+
+    if not detected_emotions:
+
+        dominant_emotion = "joy"
+        confidence = 0.0
+        intensity = 0.0
+        intensity_level = "low"
+        polarity = "neutral"
+        mixed_state = False
+
+    return {
+        "dominant_emotion": dominant_emotion,
+        "multiple_emotions": detected_emotions,
         "confidence": confidence,
         "intensity": intensity,
         "intensity_level": intensity_level,
         "polarity": polarity,
-        "mixed_emotional_state": positive > 0 and negative > 0,
-        "emotional_state": dominant,
+        "mixed_emotional_state": mixed_state,
+        "emotional_state": dominant_emotion,
+        "emotion_probabilities": emotion_scores,
     }
 
-    return state, scores
 
+# ==================================================
+# RECOMMENDATIONS
+# ==================================================
 
-def build_recommendations(dominant_emotion):
-    return [
-        dict(item)
-        for item in RECOMMENDATIONS.get(
-            dominant_emotion, RECOMMENDATIONS["joy"]
-        )
-    ]
+def generate_recommendations(
+    dominant_emotion,
+    emotion_scores,
+):
 
+    recommendations = RECOMMENDATIONS.get(
+        dominant_emotion,
+        [],
+    )
 
-# --------------------------------------------------
-# HELPER FUNCTIONS FOR HISTORY
-# --------------------------------------------------
+    result = []
 
-def get_recommendation_list(record):
-    """Support list and nested-dictionary history formats."""
-    items = record.get("recommendations", [])
+    for index, recommendation in enumerate(
+        recommendations,
+        start=1,
+    ):
 
-    if isinstance(items, dict):
-        items = items.get("recommendations", [])
+        item = recommendation.copy()
 
-    return items if isinstance(items, list) else []
-
-
-def get_recommendation_title(item, rank):
-    if isinstance(item, dict):
-        return (
-            item.get("title")
-            or item.get("name")
-            or item.get("recommendation")
-            or item.get("activity")
-            or item.get("recommendation_id")
-            or item.get("id")
-            or f"Recommendation {rank}"
+        score = round(
+            5.0
+            + emotion_scores.get(
+                dominant_emotion,
+                0,
+            ) * 2.5
+            - (index - 1) * 0.25,
+            2,
         )
 
-    return str(item)
+        item["ranking_score"] = score
+
+        result.append(item)
+
+    return result
 
 
-# --------------------------------------------------
-# PAGE HEADER
-# --------------------------------------------------
-
-st.title("🧠 MoodMentor")
-st.subheader("Emotion Analysis & Personalized Wellness Dashboard")
-st.write(
-    "Enter your thoughts or feelings below. MoodMentor analyzes "
-    "your text using keywords and displays wellness suggestions."
-)
-st.caption(
-    "Note: This dashboard uses a simple keyword-based analysis, "
-    "not the BERT/DistilBERT model."
-)
-
-# --------------------------------------------------
-# INPUT AND CURRENT ANALYSIS
-# --------------------------------------------------
+# ==================================================
+# ANALYZE YOUR EMOTIONS
+# ==================================================
 
 st.divider()
+
 st.header("Analyze Your Emotions")
 
 user_text = st.text_area(
-    "How are you feeling today?",
-    placeholder="Example: I am feeling worried and anxious today.",
+    "Enter your thoughts or feelings:",
     height=120,
+    placeholder=(
+        "Example: I am feeling worried and anxious today."
+    ),
 )
 
-if st.button("Analyze Emotion", type="primary"):
+analyze_button = st.button(
+    "Analyze Emotion",
+    type="primary",
+)
+
+
+if analyze_button:
+
     if not user_text.strip():
-        st.warning("Please enter your thoughts or feelings first.")
+
+        st.warning(
+            "Please enter some text before analyzing."
+        )
+
     else:
-        try:
-            state, emotion_scores = analyze_emotion(user_text)
-            recommendations = build_recommendations(
-                state["dominant_emotion"]
-            )
 
-            save_emotion_record(emotion_scores)
+        analysis = analyze_emotion(
+            user_text
+        )
 
-            save_recommendation_history(
-                user_text,
-                state,
+        emotion_scores = analysis[
+            "emotion_probabilities"
+        ]
+
+        dominant_emotion = analysis[
+            "dominant_emotion"
+        ]
+
+        recommendations = (
+            generate_recommendations(
+                dominant_emotion,
                 emotion_scores,
-                recommendations,
             )
+        )
 
-            st.session_state["current_analysis"] = {
-                "user_text": user_text,
-                "state": state,
-                "emotion_scores": emotion_scores,
-                "recommendations": recommendations,
-            }
+        timestamp = datetime.now().isoformat(
+            timespec="seconds"
+        )
 
-            st.success("Emotion analysis completed!")
+        save_emotion_record(
+            emotion_scores,
+            timestamp=timestamp,
+        )
 
-        except Exception as error:
-            st.error("Could not complete the analysis.")
-            st.exception(error)
+        save_recommendation_history(
+            user_text,
+            analysis,
+            emotion_scores,
+            recommendations,
+        )
 
-# --------------------------------------------------
-# DISPLAY CURRENT ANALYSIS
-# --------------------------------------------------
+        st.session_state[
+            "latest_analysis"
+        ] = analysis
 
-current = st.session_state.get("current_analysis")
+        st.session_state[
+            "latest_recommendations"
+        ] = recommendations
 
-if current:
-    state = current["state"]
-    scores = current["emotion_scores"]
-    recommendations = current["recommendations"]
+        st.success(
+            "Emotion analysis completed."
+        )
 
-    st.subheader("Your Emotional State")
+
+# ==================================================
+# DISPLAY LATEST ANALYSIS
+# ==================================================
+
+if "latest_analysis" in st.session_state:
+
+    analysis = st.session_state[
+        "latest_analysis"
+    ]
+
+    recommendations = st.session_state.get(
+        "latest_recommendations",
+        [],
+    )
+
+    st.subheader(
+        "Latest Emotion Analysis"
+    )
 
     col1, col2, col3 = st.columns(3)
 
-    col1.metric(
-        "Dominant Emotion",
-        state["dominant_emotion"].capitalize(),
+    with col1:
+
+        st.metric(
+            "Dominant Emotion",
+            str(
+                analysis[
+                    "dominant_emotion"
+                ]
+            ).capitalize(),
+        )
+
+    with col2:
+
+        st.metric(
+            "Confidence",
+            f"{analysis['confidence'] * 100:.1f}%",
+        )
+
+    with col3:
+
+        st.metric(
+            "Intensity",
+            f"{analysis['intensity']}%",
+        )
+
+    st.write(
+        "**Polarity:**",
+        analysis["polarity"].capitalize(),
     )
-    col2.metric("Confidence", f'{state["confidence"] * 100:.0f}%')
-    col3.metric("Intensity", f'{state["intensity"]}%')
+
+    st.write(
+        "**Multiple emotions:**",
+        ", ".join(
+            analysis["multiple_emotions"]
+        )
+        if analysis["multiple_emotions"]
+        else "None",
+    )
+
+    st.write(
+        "**Emotional state:**",
+        analysis["emotional_state"].capitalize(),
+    )
 
     st.write(
         "**Intensity level:**",
-        state["intensity_level"].capitalize(),
-    )
-    st.write("**Polarity:**", state["polarity"].capitalize())
-    st.write(
-        "**Detected emotions:**",
-        ", ".join(state["multiple_emotions"]).capitalize()
-        if state["multiple_emotions"]
-        else "None detected",
+        analysis["intensity_level"].capitalize(),
     )
 
-    st.write("### Emotion Scores")
-    score_frame = pd.DataFrame({
-        "Emotion": list(scores.keys()),
-        "Score": list(scores.values()),
-    }).set_index("Emotion")
+    st.subheader(
+        "Emotion Scores"
+    )
 
-    st.bar_chart(score_frame, horizontal=True)
+    score_data = pd.DataFrame(
+        {
+            "Emotion": list(
+                analysis[
+                    "emotion_probabilities"
+                ].keys()
+            ),
+            "Score (%)": [
+                round(
+                    score * 100,
+                    1,
+                )
+                for score in analysis[
+                    "emotion_probabilities"
+                ].values()
+            ],
+        }
+    )
 
-    st.subheader("Personalized Recommendations")
+    st.dataframe(
+        score_data,
+        hide_index=True,
+    )
 
-    for rank, item in enumerate(recommendations, start=1):
-        with st.container(border=True):
-            st.markdown(f"**{rank}. {item['title']}**")
-            st.write(item["description"])
-            st.write(f"Ranking score: {item['ranking_score']}")
+    st.subheader(
+        "Personalized Wellness Suggestions"
+    )
 
-            col_like, col_dislike = st.columns(2)
+    for rank, recommendation in enumerate(
+        recommendations,
+        start=1,
+    ):
 
-            if col_like.button("👍 Like", key=f"like_{rank}_{item['id']}"):
-                try:
-                    records = load_recommendation_history()
+        st.markdown(
+            f"**{rank}. "
+            f"{recommendation['title']}**"
+        )
 
-                    if records:
-                        update_recommendation_feedback(
-                            records[-1]["timestamp"],
-                            item["id"],
-                            "liked",
-                        )
+        st.write(
+            recommendation["description"]
+        )
 
-                    save_feedback(
-                        item["id"],
-                        item["title"],
-                        "liked",
-                    )
-                    st.success("Feedback saved!")
-                except Exception as error:
-                    st.error("Could not save feedback.")
-                    st.exception(error)
+        st.caption(
+            f"Category: "
+            f"{recommendation.get('category', '')} | "
+            f"Ranking score: "
+            f"{recommendation.get('ranking_score', '')}"
+        )
 
-            if col_dislike.button(
-                "👎 Dislike",
-                key=f"dislike_{rank}_{item['id']}",
+        recommendation_id = (
+            recommendation["id"]
+        )
+
+        feedback_col1, feedback_col2 = st.columns(2)
+
+        with feedback_col1:
+
+            if st.button(
+                "👍 Like",
+                key=f"latest_like_{recommendation_id}",
             ):
-                try:
-                    records = load_recommendation_history()
 
-                    if records:
-                        update_recommendation_feedback(
-                            records[-1]["timestamp"],
-                            item["id"],
-                            "disliked",
-                        )
+                save_feedback(
+                    recommendation_id,
+                    recommendation["title"],
+                    "liked",
+                )
 
-                    save_feedback(
-                        item["id"],
-                        item["title"],
-                        "disliked",
-                    )
-                    st.success("Feedback saved!")
-                except Exception as error:
-                    st.error("Could not save feedback.")
-                    st.exception(error)
+                update_recommendation_feedback(
+                    datetime.now().isoformat(
+                        timespec="seconds"
+                    ),
+                    recommendation_id,
+                    "liked",
+                )
 
-# --------------------------------------------------
+                st.success(
+                    "Feedback saved: Liked"
+                )
+
+        with feedback_col2:
+
+            if st.button(
+                "👎 Dislike",
+                key=f"latest_dislike_{recommendation_id}",
+            ):
+
+                save_feedback(
+                    recommendation_id,
+                    recommendation["title"],
+                    "disliked",
+                )
+
+                update_recommendation_feedback(
+                    datetime.now().isoformat(
+                        timespec="seconds"
+                    ),
+                    recommendation_id,
+                    "disliked",
+                )
+
+                st.warning(
+                    "Feedback saved: Disliked"
+                )
+
+        st.divider()
+
+
+# ==================================================
 # EMOTIONAL TRENDS
-# --------------------------------------------------
+# ==================================================
 
 st.divider()
+
 st.header("Emotional Trends")
 
 emotion_history = load_emotion_history()
-st.write(f"Total emotion records: {len(emotion_history)}")
 
-trend_period = st.selectbox(
-    "Choose trend period",
-    ["Daily", "Weekly", "Monthly"],
+st.write(
+    f"Total emotion records: "
+    f"{len(emotion_history)}"
 )
 
 if emotion_history:
-    if trend_period == "Daily":
-        trend_data = calculate_daily_average(emotion_history)
-    elif trend_period == "Weekly":
-        trend_data = calculate_weekly_average(emotion_history)
-    else:
-        trend_data = calculate_monthly_average(emotion_history)
 
-    if trend_data:
-        trend_frame = pd.DataFrame.from_dict(
-            trend_data,
-            orient="index",
-        ).fillna(0)
+    daily_average = calculate_daily_average(
+        emotion_history
+    )
 
-        trend_frame.index = trend_frame.index.map(str)
-        st.line_chart(trend_frame)
+    if daily_average:
+
+        trend_frame = pd.DataFrame(
+            daily_average
+        ).T
+
+        trend_frame.index.name = "Date"
+
+        st.line_chart(
+            trend_frame
+        )
+
     else:
-        st.info("There is not enough data to display trends yet.")
+
+        st.info(
+            "Not enough data for daily trends."
+        )
+
 else:
-    st.info("Analyze some text to begin building emotion trends.")
 
-# --------------------------------------------------
+    st.info(
+        "No emotion history available yet."
+    )
+
+
+# ==================================================
 # RECOMMENDATION FEEDBACK HISTORY
-# --------------------------------------------------
+# ==================================================
 
 st.divider()
-st.header("Recommendation Feedback History")
+
+st.header(
+    "Recommendation Feedback History"
+)
 
 feedback_records = load_feedback_history()
-st.write(f"Total feedback records: {len(feedback_records)}")
+
+st.write(
+    f"Total feedback records: "
+    f"{len(feedback_records)}"
+)
 
 if feedback_records:
-    for item in reversed(feedback_records):
-        title = (
-            item.get("title")
-            or item.get("recommendation_title")
-            or item.get("recommendation_name")
-            or item.get("recommendation_id")
-            or "Unknown"
-        )
 
-        st.write(f"**Recommendation:** {title}")
+    for feedback_record in reversed(
+        feedback_records
+    ):
+
         st.write(
-            "**Feedback:**",
-            str(item.get("feedback", "Not provided")).capitalize(),
+            f"**Recommendation:** "
+            f"{feedback_record.get('recommendation', '')}"
         )
-        st.caption(
-            f"Date: {item.get('timestamp', 'Unknown')} | "
-            f"ID: {item.get('recommendation_id', 'Unknown')}"
-        )
-        st.divider()
-else:
-    st.info("No feedback submitted yet.")
 
-# --------------------------------------------------
+        st.write(
+            f"**Feedback:** "
+            f"{str(feedback_record.get('feedback', '')).capitalize()}"
+        )
+
+        st.caption(
+            f"Date: "
+            f"{feedback_record.get('timestamp', 'Unknown')}"
+            f" | ID: "
+            f"{feedback_record.get('recommendation_id', 'Unknown')}"
+        )
+
+        st.divider()
+
+else:
+
+    st.info(
+        "No recommendation feedback available yet."
+    )
+
+
+# ==================================================
 # COMPLETE RECOMMENDATION HISTORY
-# --------------------------------------------------
+# ==================================================
 
 st.divider()
-st.header("Complete Recommendation History")
+
+st.header(
+    "Complete Recommendation History"
+)
 
 history_records = load_recommendation_history()
-st.write(f"Total analyses: {len(history_records)}")
+
+st.write(
+    f"Total analyses: {len(history_records)}"
+)
 
 if history_records:
-    for record in reversed(history_records):
-        state = record.get("emotional_state", {})
-        previous_scores = record.get("emotion_probabilities", {})
-        previous_recommendations = get_recommendation_list(record)
-        feedback = record.get("feedback", {})
 
-        if not isinstance(state, dict):
+    for record in reversed(history_records):
+
+        state = record.get(
+            "emotional_state",
+            {},
+        )
+
+        previous_scores = record.get(
+            "emotion_probabilities",
+            {},
+        )
+
+        recommendations = record.get(
+            "recommendations",
+            [],
+        )
+
+        feedback = record.get(
+            "feedback",
+            {},
+        )
+
+        if not isinstance(
+            state,
+            dict,
+        ):
             state = {}
-        if not isinstance(previous_scores, dict):
+
+        if not isinstance(
+            previous_scores,
+            dict,
+        ):
             previous_scores = {}
-        if not isinstance(feedback, dict):
+
+        if not isinstance(
+            recommendations,
+            list,
+        ):
+            recommendations = []
+
+        if not isinstance(
+            feedback,
+            dict,
+        ):
             feedback = {}
 
         with st.expander(
-            f"Analysis: {record.get('timestamp', 'Unknown')}"
+            f"Analysis: "
+            f"{record.get('timestamp', 'Unknown')}"
         ):
-            st.write("**Your input:**")
-            st.write(record.get("user_text", ""))
+
+            # INPUT
+            st.write(
+                "**Your input:**"
+            )
 
             st.write(
+                record.get(
+                    "user_text",
+                    "No input recorded.",
+                )
+            )
+
+            # DOMINANT EMOTION
+            st.write(
                 "**Dominant emotion:**",
-                str(state.get("dominant_emotion", "Unknown")).capitalize(),
+                str(
+                    state.get(
+                        "dominant_emotion",
+                        "Unknown",
+                    )
+                ).capitalize(),
+            )
+
+            # INTENSITY
+            intensity = state.get(
+                "intensity",
+                "Unknown",
+            )
+
+            intensity_level = state.get(
+                "intensity_level",
+                "Unknown",
             )
 
             st.write(
                 "**Intensity:**",
-                f"{state.get('intensity', 'Unknown')}% "
-                f"({state.get('intensity_level', 'Unknown')})",
+                f"{intensity}% "
+                f"({intensity_level})",
             )
 
-            st.write("**Emotion scores:**")
+            # EMOTION SCORES
+            st.write(
+                "**Emotion scores:**"
+            )
 
             if previous_scores:
-                score_frame = pd.DataFrame({
-                    "Emotion": list(previous_scores.keys()),
-                    "Score (%)": [
-                        round(score * 100, 1)
-                        if isinstance(score, (int, float))
-                        else score
-                        for score in previous_scores.values()
-                    ],
-                })
-                st.dataframe(score_frame, hide_index=True)
-            else:
-                st.write("No emotion scores available.")
 
-            st.write("**Recommendations:**")
+                score_rows = []
 
-            if previous_recommendations:
-                for rank, item in enumerate(
-                    previous_recommendations, start=1
+                for emotion, score in (
+                    previous_scores.items()
                 ):
-                    title = get_recommendation_title(item, rank)
 
-                    if isinstance(item, dict):
-                        recommendation_id = str(
-                            item.get("id")
-                            or item.get("recommendation_id")
-                            or f"recommendation_{rank}"
+                    if isinstance(
+                        score,
+                        (int, float),
+                    ):
+
+                        score_value = round(
+                            score * 100,
+                            1,
                         )
-                        description = item.get("description", "")
-                        score = item.get(
-                            "ranking_score",
-                            item.get(
-                                "hybrid_score",
-                                item.get("score", ""),
-                            ),
-                        )
-                        explanation = item.get("explanation", [])
+
                     else:
-                        recommendation_id = f"recommendation_{rank}"
-                        description = ""
-                        score = ""
-                        explanation = []
 
-                    st.markdown(f"**{rank}. {title}**")
-                    st.caption(f"Recommendation ID: {recommendation_id}")
+                        score_value = score
+
+                    score_rows.append(
+                        {
+                            "Emotion": emotion,
+                            "Score (%)": score_value,
+                        }
+                    )
+
+                score_frame = pd.DataFrame(
+                    score_rows
+                )
+
+                st.dataframe(
+                    score_frame,
+                    hide_index=True,
+                )
+
+            else:
+
+                st.write(
+                    "No emotion scores available."
+                )
+
+            # RECOMMENDATIONS
+            st.write(
+                "**Recommendations:**"
+            )
+
+            if recommendations:
+
+                for rank, recommendation in enumerate(
+                    recommendations,
+                    start=1,
+                ):
+
+                    if not isinstance(
+                        recommendation,
+                        dict,
+                    ):
+
+                        st.write(
+                            f"{rank}. "
+                            f"{str(recommendation)}"
+                        )
+
+                        continue
+
+                    recommendation_id = str(
+                        recommendation.get(
+                            "id",
+                            f"recommendation_{rank}",
+                        )
+                    )
+
+                    title = str(
+                        recommendation.get(
+                            "title",
+                            recommendation_id,
+                        )
+                    )
+
+                    description = recommendation.get(
+                        "description",
+                        "",
+                    )
+
+                    ranking_score = recommendation.get(
+                        "ranking_score",
+                        "",
+                    )
+
+                    category = recommendation.get(
+                        "category",
+                        "",
+                    )
+
+                    st.markdown(
+                        f"### {rank}. {title}"
+                    )
+
+                    st.write(
+                        f"**Recommendation ID:** "
+                        f"{recommendation_id}"
+                    )
+
+                    if category:
+
+                        st.write(
+                            f"**Category:** "
+                            f"{category}"
+                        )
 
                     if description:
-                        st.write(description)
 
-                    if score != "":
-                        st.write(f"Ranking score: {score}")
+                        st.write(
+                            description
+                        )
+
+                    if ranking_score != "":
+
+                        st.write(
+                            f"**Ranking score:** "
+                            f"{ranking_score}"
+                        )
+
+                    explanation = recommendation.get(
+                        "explanation",
+                        [],
+                    )
 
                     if explanation:
-                        st.write("**Why this was recommended:**")
-                        if isinstance(explanation, list):
-                            for reason in explanation:
-                                st.write(f"- {reason}")
-                        else:
-                            st.write(explanation)
 
-                    status = feedback.get(
+                        st.write(
+                            "**Why this was recommended:**"
+                        )
+
+                        if isinstance(
+                            explanation,
+                            list,
+                        ):
+
+                            for reason in explanation:
+
+                                st.write(
+                                    f"• {reason}"
+                                )
+
+                        else:
+
+                            st.write(
+                                str(explanation)
+                            )
+
+                    feedback_status = feedback.get(
                         recommendation_id,
                         "Not provided",
                     )
-                    st.caption(f"Feedback: {str(status).capitalize()}")
-                    st.divider()
-            else:
-                st.info("No recommendations recorded.")
-else:
-    st.info("No recommendation history available yet.")
 
-# --------------------------------------------------
-# SEARCH, FILTER AND EXPORT
-# --------------------------------------------------
+                    st.write(
+                        f"**Feedback:** "
+                        f"{str(feedback_status).capitalize()}"
+                    )
+
+                    st.divider()
+
+            else:
+
+                st.info(
+                    "No recommendations recorded."
+                )
+
+else:
+
+    st.info(
+        "No recommendation history available yet."
+    )
+
+
+# ==================================================
+# SEARCH, FILTER & EXPORT REPORTS
+# ==================================================
 
 st.divider()
-st.header("Search, Filter & Export Reports")
 
-search_history = load_recommendation_history()
+st.header(
+    "Search, Filter & Export Reports"
+)
 
-if search_history:
-    col1, col2 = st.columns(2)
 
-    with col1:
-        start_date = st.date_input(
-            "Start date",
-            value=None,
-            key="report_start_date",
+col1, col2 = st.columns(2)
+
+with col1:
+
+    start_date = st.date_input(
+        "Start date",
+        value=None,
+    )
+
+with col2:
+
+    end_date = st.date_input(
+        "End date",
+        value=None,
+    )
+
+
+emotion_filter = st.selectbox(
+    "Emotion",
+    [
+        "All",
+        "joy",
+        "sadness",
+        "anger",
+        "fear",
+        "surprise",
+        "disgust",
+    ],
+)
+
+
+intensity_filter = st.selectbox(
+    "Intensity",
+    [
+        "All",
+        "low",
+        "medium",
+        "high",
+    ],
+)
+
+
+recommendation_type_filter = st.selectbox(
+    "Recommendation type",
+    [
+        "All",
+        "relaxation",
+        "music",
+        "journaling",
+        "fun",
+        "learning",
+    ],
+)
+
+
+feedback_filter = st.selectbox(
+    "Feedback status",
+    [
+        "All",
+        "liked",
+        "disliked",
+        "Not provided",
+    ],
+)
+
+
+filtered_records = filter_recommendation_history(
+    history_records,
+    start_date=start_date,
+    end_date=end_date,
+    emotion=emotion_filter,
+    intensity=intensity_filter,
+    recommendation_type=recommendation_type_filter,
+    feedback_status=feedback_filter,
+)
+
+
+st.write(
+    f"Matching analyses: "
+    f"{len(filtered_records)}"
+)
+
+
+st.subheader(
+    "Filtered Results"
+)
+
+
+if filtered_records:
+
+    for record in filtered_records:
+
+        state = record.get(
+            "emotional_state",
+            {},
         )
 
-    with col2:
-        end_date = st.date_input(
-            "End date",
-            value=None,
-            key="report_end_date",
+        recommendations = record.get(
+            "recommendations",
+            [],
         )
 
-    selected_emotion = st.selectbox(
-        "Filter by emotion",
-        ["All", "joy", "sadness", "anger", "fear", "surprise", "disgust"],
-    )
-
-    selected_intensity = st.selectbox(
-        "Filter by intensity",
-        ["All", "low", "moderate", "medium", "high"],
-    )
-
-    selected_feedback = st.selectbox(
-        "Filter by feedback",
-        ["All", "liked", "disliked", "not provided"],
-    )
-
-    search_title = st.text_input(
-        "Search recommendation title",
-        placeholder="Enter a recommendation name",
-    )
-
-    try:
-        filtered_records = filter_recommendation_history(
-            search_history,
-            start_date=start_date,
-            end_date=end_date,
-            emotion=selected_emotion,
-            intensity=selected_intensity,
-            recommendation_type="All",
-            feedback_status=selected_feedback,
+        st.write(
+            f"**Date:** "
+            f"{record.get('timestamp', 'Unknown')}"
         )
 
-        if search_title.strip():
-            search_term = search_title.strip().lower()
+        st.write(
+            f"**Input:** "
+            f"{record.get('user_text', '')}"
+        )
 
-            filtered_records = [
-                record
-                for record in filtered_records
-                if any(
-                    search_term in get_recommendation_title(
-                        item, rank
-                    ).lower()
-                    for rank, item in enumerate(
-                        get_recommendation_list(record), start=1
+        st.write(
+            f"**Dominant emotion:** "
+            f"{state.get('dominant_emotion', 'Unknown')}"
+        )
+
+        titles = []
+
+        if isinstance(
+            recommendations,
+            list,
+        ):
+
+            for recommendation in recommendations:
+
+                if isinstance(
+                    recommendation,
+                    dict,
+                ):
+
+                    titles.append(
+                        recommendation.get(
+                            "title",
+                            recommendation.get(
+                                "id",
+                                "Unknown",
+                            ),
+                        )
                     )
-                )
-            ]
 
-        st.write(f"Matching analyses: {len(filtered_records)}")
+                else:
 
-        if filtered_records:
-            st.subheader("Filtered Results")
-
-            for record in filtered_records:
-                st.write(
-                    f"**Date:** {record.get('timestamp', 'Unknown')}"
-                )
-                st.write(f"**Input:** {record.get('user_text', '')}")
-
-                state = record.get("emotional_state", {})
-                if not isinstance(state, dict):
-                    state = {}
-
-                st.write(
-                    "**Dominant emotion:** "
-                    + str(state.get("dominant_emotion", "Unknown"))
-                )
-
-                titles = [
-                    get_recommendation_title(item, rank)
-                    for rank, item in enumerate(
-                        get_recommendation_list(record), start=1
+                    titles.append(
+                        str(recommendation)
                     )
-                ]
 
-                if titles:
-                    st.write("**Recommendations:** " + ", ".join(titles))
-
-                st.divider()
-
-            csv_data = generate_csv_report(filtered_records)
-            pdf_data = generate_pdf_report(filtered_records)
-
-            col_csv, col_pdf = st.columns(2)
-
-            with col_csv:
-                st.download_button(
-                    "Download CSV Report",
-                    data=csv_data,
-                    file_name="moodmentor_report.csv",
-                    mime="text/csv",
+        st.write(
+            "**Recommendations:** "
+            + (
+                ", ".join(
+                    titles
                 )
+                if titles
+                else "None"
+            )
+        )
 
-            with col_pdf:
-                st.download_button(
-                    "Download PDF Report",
-                    data=pdf_data,
-                    file_name="moodmentor_report.pdf",
-                    mime="application/pdf",
-                )
-        else:
-            st.info("No records match the selected filters.")
-
-    except Exception as error:
-        st.error("Could not filter or export the report.")
-        st.exception(error)
+        st.divider()
 
 else:
-    st.info("No history records available to search or export.")
+
+    st.info(
+        "No records match the selected filters."
+    )
+
+
+# ==================================================
+# EXPORT REPORTS
+# ==================================================
+
+st.subheader(
+    "Export Reports"
+)
+
+
+export_col1, export_col2 = st.columns(2)
+
+
+with export_col1:
+
+    if st.button(
+        "Export CSV",
+        key="export_csv",
+    ):
+
+        csv_data = generate_csv_report(
+            filtered_records
+        )
+
+        st.download_button(
+            label="Download CSV",
+            data=csv_data,
+            file_name="moodmentor_report.csv",
+            mime="text/csv",
+            key="download_csv",
+        )
+
+
+with export_col2:
+
+    if st.button(
+        "Export PDF",
+        key="export_pdf",
+    ):
+
+        pdf_data = generate_pdf_report(
+            filtered_records
+        )
+
+        st.download_button(
+            label="Download PDF",
+            data=pdf_data,
+            file_name="moodmentor_report.pdf",
+            mime="application/pdf",
+            key="download_pdf",
+        )
+
+
+# ==================================================
+# FOOTER
+# ==================================================
+
+st.divider()
+
+st.caption(
+    "MoodMentor | Milestone 4 Dashboard"
+)

@@ -1,70 +1,169 @@
-
 import csv
 import io
-from datetime import datetime
+
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.platypus import (
     SimpleDocTemplate,
     Table,
     TableStyle,
-    Paragraph,
-    Spacer,
 )
-from reportlab.lib.styles import getSampleStyleSheet
+
+
+def _get_recommendation_title(item):
+    """Return a readable recommendation title."""
+    if isinstance(item, dict):
+        return (
+            item.get("title")
+            or item.get("name")
+            or item.get("recommendation")
+            or item.get("activity")
+            or item.get("id")
+            or "Unknown recommendation"
+        )
+
+    return str(item)
+
+
+def _get_recommendation_text(recommendations):
+    """Convert recommendation objects into readable text."""
+    if not recommendations:
+        return ""
+
+    if isinstance(recommendations, dict):
+        recommendations = recommendations.get(
+            "recommendations",
+            [],
+        )
+
+    if not isinstance(recommendations, list):
+        return str(recommendations)
+
+    titles = []
+
+    for item in recommendations:
+        titles.append(_get_recommendation_title(item))
+
+    return "; ".join(titles)
+
+
+def _get_feedback_text(feedback):
+    """Convert feedback dictionary into readable text."""
+    if not feedback:
+        return ""
+
+    if isinstance(feedback, dict):
+        values = []
+
+        for recommendation_id, status in feedback.items():
+            values.append(
+                f"{recommendation_id}: {status}"
+            )
+
+        return "; ".join(values)
+
+    return str(feedback)
 
 
 def prepare_report_rows(records):
-    """Convert history records into rows suitable for CSV and PDF."""
+    """
+    Convert recommendation history records into
+    rows suitable for CSV and PDF reports.
+    """
 
     rows = []
 
     for record in records:
-        state = record.get("emotional_state", {})
-        scores = record.get("emotion_scores", {})
-        recommendations = record.get("recommendations", [])
-        feedback = record.get("feedback", {})
+        timestamp = record.get(
+            "timestamp",
+            "",
+        )
 
-        if not isinstance(state, dict):
-            state = {}
-        if not isinstance(scores, dict):
-            scores = {}
-        if not isinstance(recommendations, list):
-            recommendations = []
-        if not isinstance(feedback, dict):
-            feedback = {}
+        # Actual history field name
+        input_text = record.get(
+            "user_text",
+            record.get("input_text", ""),
+        )
 
-        recommendation_titles = [
-            str(item.get("title", ""))
-            for item in recommendations
-            if isinstance(item, dict)
-        ]
+        # Actual history field name
+        emotion_scores = record.get(
+            "emotion_probabilities",
+            record.get("emotion_scores", {}),
+        )
 
-        rows.append({
-            "timestamp": str(record.get("timestamp", "")),
-            "input_text": str(record.get("input_text", "")),
-            "dominant_emotion": str(
-                state.get("dominant_emotion", record.get("dominant_emotion", ""))
-            ),
-            "intensity": str(
-                state.get("intensity_level", record.get("intensity_level", ""))
-            ),
-            "emotion_scores": "; ".join(
-                f"{key}: {value}" for key, value in scores.items()
-            ),
-            "recommendations": "; ".join(recommendation_titles),
-            "feedback": "; ".join(
-                f"{key}: {value}" for key, value in feedback.items()
-            ),
-        })
+        emotional_state = record.get(
+            "emotional_state",
+            {},
+        )
+
+        dominant_emotion = emotional_state.get(
+            "dominant_emotion",
+            record.get("dominant_emotion", ""),
+        )
+
+        intensity = emotional_state.get(
+            "intensity",
+            record.get("intensity", ""),
+        )
+
+        intensity_level = emotional_state.get(
+            "intensity_level",
+            "",
+        )
+
+        # If intensity is already a text level,
+        # use it directly.
+        if isinstance(intensity, str):
+            intensity_value = intensity
+        elif intensity_level:
+            intensity_value = str(
+                intensity_level
+            )
+        else:
+            intensity_value = str(
+                intensity
+            )
+
+        recommendations = record.get(
+            "recommendations",
+            [],
+        )
+
+        feedback = record.get(
+            "feedback",
+            {},
+        )
+
+        rows.append(
+            {
+                "timestamp": str(timestamp),
+                "input_text": str(input_text),
+                "dominant_emotion": str(
+                    dominant_emotion
+                ),
+                "intensity": intensity_value,
+                "emotion_scores": str(
+                    emotion_scores
+                ),
+                "recommendations": (
+                    _get_recommendation_text(
+                        recommendations
+                    )
+                ),
+                "feedback": _get_feedback_text(
+                    feedback
+                ),
+            }
+        )
 
     return rows
 
 
 def generate_csv_report(records):
-    """Return a CSV report as text."""
+    """Generate a CSV report from history records."""
 
     rows = prepare_report_rows(records)
+
     output = io.StringIO()
 
     fieldnames = [
@@ -77,38 +176,34 @@ def generate_csv_report(records):
         "feedback",
     ]
 
-    writer = csv.DictWriter(output, fieldnames=fieldnames)
+    writer = csv.DictWriter(
+        output,
+        fieldnames=fieldnames,
+    )
+
     writer.writeheader()
-    writer.writerows(rows)
+
+    for row in rows:
+        writer.writerow(row)
 
     return output.getvalue()
 
 
 def generate_pdf_report(records):
-    """Return a PDF report as bytes."""
+    """Generate a PDF report from history records."""
 
     rows = prepare_report_rows(records)
+
     buffer = io.BytesIO()
 
     document = SimpleDocTemplate(
         buffer,
         pagesize=landscape(A4),
-        rightMargin=25,
-        leftMargin=25,
-        topMargin=25,
-        bottomMargin=25,
+        rightMargin=20,
+        leftMargin=20,
+        topMargin=20,
+        bottomMargin=20,
     )
-
-    styles = getSampleStyleSheet()
-    story = [
-        Paragraph("Emotion Analysis Report", styles["Title"]),
-        Paragraph(
-            f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M')}",
-            styles["Normal"],
-        ),
-        Paragraph(f"Total records: {len(rows)}", styles["Normal"]),
-        Spacer(1, 12),
-    ]
 
     headers = [
         "Timestamp",
@@ -123,36 +218,82 @@ def generate_pdf_report(records):
     table_data = [headers]
 
     for row in rows:
-        table_data.append([
-            row["timestamp"],
-            row["input_text"],
-            row["dominant_emotion"],
-            row["intensity"],
-            row["emotion_scores"],
-            row["recommendations"],
-            row["feedback"],
-        ])
+        table_data.append(
+            [
+                row["timestamp"],
+                row["input_text"],
+                row["dominant_emotion"],
+                row["intensity"],
+                row["emotion_scores"],
+                row["recommendations"],
+                row["feedback"],
+            ]
+        )
+
+    if len(table_data) == 1:
+        table_data.append(
+            [
+                "",
+                "No records available",
+                "",
+                "",
+                "",
+                "",
+                "",
+            ]
+        )
 
     table = Table(
         table_data,
         repeatRows=1,
-        colWidths=[75, 125, 75, 55, 105, 125, 85],
     )
 
-    table.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#24476B")),
-        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
-        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-        ("FONTSIZE", (0, 0), (-1, -1), 7),
-        ("GRID", (0, 0), (-1, -1), 0.4, colors.grey),
-        ("VALIGN", (0, 0), (-1, -1), "TOP"),
-        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [
-            colors.white,
-            colors.HexColor("#EDF2F7"),
-        ]),
-    ]))
+    table.setStyle(
+        TableStyle(
+            [
+                (
+                    "BACKGROUND",
+                    (0, 0),
+                    (-1, 0),
+                    colors.lightgrey,
+                ),
+                (
+                    "TEXTCOLOR",
+                    (0, 0),
+                    (-1, 0),
+                    colors.black,
+                ),
+                (
+                    "GRID",
+                    (0, 0),
+                    (-1, -1),
+                    0.5,
+                    colors.grey,
+                ),
+                (
+                    "VALIGN",
+                    (0, 0),
+                    (-1, -1),
+                    "TOP",
+                ),
+                (
+                    "FONTSIZE",
+                    (0, 0),
+                    (-1, -1),
+                    7,
+                ),
+                (
+                    "BOTTOMPADDING",
+                    (0, 0),
+                    (-1, 0),
+                    6,
+                ),
+            ]
+        )
+    )
 
-    story.append(table)
-    document.build(story)
+    document.build([table])
+
+    buffer.seek(0)
 
     return buffer.getvalue()
