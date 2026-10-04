@@ -2,108 +2,138 @@
 
 ## Project Overview
 
-MoodMentor is a Python-based project designed to analyze text sentiment and emotions and provide personalized wellness recommendations. It aims to help users understand emotional patterns and explore activities that may support their well-being.
+MoodMentor is a Python-based sentiment and emotion analysis project that analyzes user text, identifies emotions, evaluates emotional intensity, generates personalized wellness recommendations, tracks emotional trends, stores recommendation feedback, and provides an interactive Streamlit dashboard.
 
-## Features
+## Project Objectives
 
-* Text input and file-based text ingestion
-* Text preprocessing
-* Baseline sentiment analysis using VADER
-* Emotion classification for Joy, Sadness, Anger, Fear, Surprise, and Disgust
-* Emotion intensity and emotional-state analysis
-* Personalized wellness recommendations
-* Hybrid recommendation engine
-* Daily, weekly, and monthly emotion trend calculations
-* Streamlit dashboard for emotion analysis and visualization
-* Emotion history storage
+- Analyze sentiment from user text
+- Identify major emotional states
+- Analyze emotional intensity
+- Generate personalized recommendations
+- Track historical emotion patterns
+- Learn from recommendation feedback
+- Provide search, filtering, and reporting features
+- Present results through an interactive dashboard
+
+## Supported Emotions
+
+The project works with six major emotions:
+
+- Joy
+- Sadness
+- Anger
+- Fear
+- Surprise
+- Disgust
+
+## Project Milestones
+
+### Milestone 1 – Sentiment Analysis
+
+- Text input and file-based text ingestion
+- Text preprocessing
+- Sentiment analysis using VADER
+- Basic Flask application
+
+### Milestone 2 – Deep Emotion Classification
+
+- Emotion dataset preparation
+- Emotion classification
+- BERT-based emotion classification
+- DistilBERT-based emotion classification
+- Confidence-based emotion prediction
+- Six emotion categories
+
+### Milestone 3 – Intelligent Recommendations
+
+- Emotion intensity analysis
+- Emotional state detection
+- Dominant emotion detection
+- Multiple emotion detection
+- Positive/negative/mixed polarity
+- Emotion severity analysis
+- Personalized recommendations
+- Hybrid recommendation engine
+- Recommendation ranking
+- Emotion history tracking
+- Feedback-based recommendation improvement
+- Recommendation explanations
+
+### Milestone 4 – Dashboard and Reporting
+
+- Interactive Streamlit dashboard
+- Emotion trend analysis
+- Daily, weekly, and monthly trends
+- Recommendation history
+- Recommendation feedback history
+- Like/Dislike feedback
+- Search and filtering
+- Recommendation ranking display
+- CSV report export
+- PDF report export
+- Automated testing
+- Final dashboard validation
+
+**Milestone 4 is the final milestone of this project.**
 
 ## Technologies Used
 
-* Python
-* Flask
-* Streamlit
-* Pandas
-* VADER Sentiment
-* BERT and DistilBERT (for the emotion-classification work)
-* Unit testing
+- Python
+- Flask
+- Streamlit
+- Pandas
+- VADER Sentiment
+- BERT
+- DistilBERT
+- Transformers
+- PyTorch
+- Pytest
+- JSON
+- CSV
+- PDF reporting
+- Git
+- GitHub
 
 ## Project Structure
 
 ```text
 Sentiment_emotion_project/
+│
 ├── milestone1/
 │   ├── ingestion.py
 │   ├── preprocessing.py
 │   └── sentiment/
+│
 ├── milestone2/
-│   └── emotion classification and dataset preparation
+│   ├── data/
+│   ├── emotion classification
+│   └── model training files
+│
 ├── milestone3/
 │   ├── emotion_analysis/
 │   ├── recommendation/
 │   ├── hybrid/
 │   ├── ranking/
 │   └── tests/
+│
 ├── milestone4/
 │   ├── dashboard/
 │   │   └── app.py
+│   │
 │   ├── data/
 │   │   ├── history.py
 │   │   ├── trend.py
-│   │   └── trend_chart.py
+│   │   ├── trend_chart.py
+│   │   ├── feedback_history.py
+│   │   ├── recommendation_history.py
+│   │   └── search_filter.py
+│   │
+│   ├── reports/
+│   │   └── export_reports.py
+│   │
 │   └── tests/
-│       └── test_trend.py
+│
 ├── app.py
-└── requirements.txt
-```
-
-## Setup and Installation
-
-1. Clone the repository:
-
-   ```bash
-   git clone https://github.com/repalanikhitha12-tech/Sentiment_emotion_project.git
-   cd Sentiment_emotion_project
-   ```
-
-2. Install dependencies:
-
-   ```bash
-   python -m pip install -r requirements.txt
-   ```
-
-## Run the Dashboard
-
-If the project virtual environment already exists on Windows, run:
-
-```powershell
-.\.venv\Scripts\python.exe -m streamlit run milestone4\dashboard\app.py
-```
-
-Then open `http://localhost:8501` in your browser.
-
-## Run Tests
-
-Run Milestone 3 tests:
-
-```powershell
-.\.venv\Scripts\python.exe -m unittest discover -s milestone3\tests -p "test*.py" -v
-```
-
-Run Milestone 4 tests:
-
-```powershell
-.\.venv\Scripts\python.exe -m unittest discover -s milestone4\tests -p "test*.py" -v
-```
-
-## Current Test Results
-
-* Milestone 3: 11 tests passed
-* Milestone 4: 5 tests passed
-
-## GitHub Repository
-
-[Sentiment_emotion_project](https://github.com/repalanikhitha12-tech/Sentiment_emotion_project)
-
-## Note
-
-The dashboard's current emotion detection uses keyword-based matching. The displayed emotion results may differ from results produced by a trained transformer model. Wellness recommendations are general suggestions and are not a substitute for professional mental-health care.
+├── requirements.txt
+├── README.md
+└── .gitignore
